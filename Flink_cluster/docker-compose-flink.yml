@@ -1,0 +1,40 @@
+services:
+  jobmanager:
+    image: flink:1.17.1
+    container_name: jobmanager
+    environment:
+      - |
+        FLINK_PROPERTIES=
+        jobmanager.rpc.address: jobmanager
+        metrics.reporters: prom
+        metrics.reporter.prom.factory.class: org.apache.flink.metrics.prometheus.PrometheusReporterFactory
+        metrics.reporter.prom.port: 9091
+    ports:
+      - "8081:8081"
+    command: jobmanager
+    depends_on: # <-- ADD THIS
+      broker:
+        condition: service_healthy
+    networks:
+      - flink_network
+
+  taskmanager:
+    image: flink:1.17.1
+    environment:
+      - |
+        FLINK_PROPERTIES=
+        jobmanager.rpc.address: jobmanager
+        metrics.reporters: prom
+        metrics.reporter.prom.factory.class: org.apache.flink.metrics.prometheus.PrometheusReporterFactory
+        metrics.reporter.prom.port: 9091
+    depends_on:
+      - jobmanager
+    command: taskmanager
+
+    deploy:
+          replicas: 2
+    networks:
+      - flink_network
+networks:
+  flink_network:
+    external: true
