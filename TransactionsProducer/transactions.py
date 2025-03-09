@@ -5,7 +5,7 @@ import time
 from faker import Faker
 from confluent_kafka import SerializingProducer
 from datetime import datetime
-from kafka_config import kafkaProducer
+from kafka_config import KafkaProducerSingleton
 fake = Faker()
 
 def generate_sales_transactions():
@@ -31,16 +31,16 @@ def delivery_report(err, msg):
     else:
         print(f"Message delivered to {msg.topic} [{msg.partition()}]")
 def main():
-    topic = 'financial_transactions'
-    producer=kafkaProducer()
+    topic = 'sales_transactions'
+    kafka=KafkaProducerSingleton()
     curr_time = datetime.now()
 
-    while (datetime.now() - curr_time).seconds < 300:
+    while (datetime.now() - curr_time).seconds < 1000:
         try:
             transaction = generate_sales_transactions()
             transaction['totalAmount'] = transaction['productPrice'] * transaction['productQuantity']
             print(transaction)
-            producer.send(topic,
+            kafka.send(topic,
                              key=transaction['transactionId'],
                              value=json.dumps(transaction),
                              )
@@ -50,6 +50,7 @@ def main():
             time.sleep(1)
         except Exception as e:
             print(e)
+        kafka.close()
 
 if __name__ == "__main__":
     main()

@@ -1,7 +1,7 @@
 import logging
 
 class LoggerConfig:
-    def __init__(self, name='streaming-data-engineering', log_file='app.log'):
+    def __init__(self,name,log_file):
         self.logger = self.setup_logger(name, log_file)
 
     def setup_logger(self, name, log_file):
@@ -24,4 +24,4 @@ class LoggerConfig:
         return logger
 
 
-logger = LoggerConfig().logger
+

@@ -1,10 +1,14 @@
 package DAO;
+import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 
 import java.sql.Timestamp;
 @Data
-public class Transactions {
+@NoArgsConstructor
+@AllArgsConstructor
+public class Transactions implements EventTimestamp{
 
        private String transactionId;
        private String productId;
@@ -19,4 +23,8 @@ public class Transactions {
        private Timestamp transactionDate;
        private String paymentMethod;
 
+       @Override
+       public Timestamp getTimestamp() {
+              return this.transactionDate;
+       }
 }

@@ -80,6 +80,8 @@ services:
       interval: 30s
       timeout: 10s
       retries: 5
+
+
   postgres:
     image: postgres:latest
     container_name: postgres
@@ -94,8 +96,13 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    volumes:
+      - ./sql:/docker-entrypoint-initdb.d
     networks:
       - flink_network
+
+
+
 
 #  elasticsearch:
 #    image: docker.elastic.co/elasticsearch/elasticsearch:8.11.1
