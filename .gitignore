@@ -4,6 +4,7 @@ target/
 !**/src/test/**/target/
 .idea
 .venv
+.logs
 .__pycache__
 ### IntelliJ IDEA ###
 .idea/modules.xml
