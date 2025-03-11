@@ -49,7 +49,21 @@ def InsertData(conn,values,table):
     finally:
         cursor.close()
 
-def executeSql(conn,sql):
+def readSql(sql):
+    try:
+        conn=getConnection()
+        cursor=conn.cursor()
+        cursor.execute(sql)
+        results = cursor.fetchall()
+        return results
+    except Exception as e:
+        logger.error("Cannot execute sql",e)
+        return []
+    finally:
+        cursor.close()
+        conn.close()
+def executeSql(sql):
+    conn=getConnection()
     cursor=conn.cursor()
     try:
         cursor.execute(sql)
@@ -95,6 +109,9 @@ def simulateExchangeUpdate():
 
 
 if __name__=='__main__':
+    results=readSql("select * from currency_conversion_rates")
+    if len(results)!=0:
+        generateData()
     simulateExchangeUpdate()
 
 

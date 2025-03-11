@@ -1,21 +1,14 @@
 package Deserializer;
-
-import DAO.Transactions;
-import FlinkCommerce.DataStreamJob;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import lombok.extern.log4j.Log4j2;
 import org.apache.flink.api.common.serialization.DeserializationSchema;
 import org.apache.flink.api.common.typeinfo.TypeInformation;
-import org.apache.flink.util.Collector;
-import org.apache.logging.log4j.Logger;
-import org.apache.logging.log4j.LogManager;
 import java.io.IOException;
-import DAO.CurrencyExchange;
-import FlinkCommerce.*;
-@Log4j2
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 public class JSONValueDeserializationSchema<T> implements DeserializationSchema<T> {
     private final ObjectMapper objectMapper =new ObjectMapper();
-    private static final Logger logger = LogManager.getLogger(DataStreamJob.class);
+    private static final Logger logger = LoggerFactory.getLogger(JSONValueDeserializationSchema.class);
     private final Class<T> typeClass;
 
     public JSONValueDeserializationSchema(Class<T> typeClass) {

@@ -19,6 +19,8 @@
 package FlinkCommerce;
 
 import DAO.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import Deserializer.JSONValueDeserializationSchema;
 import ConfigReader.ConfigReader;
 import org.apache.flink.api.common.eventtime.WatermarkStrategy;
@@ -28,6 +30,7 @@ import org.apache.flink.connector.jdbc.JdbcExecutionOptions;
 import org.apache.flink.connector.jdbc.JdbcStatementBuilder;
 import org.apache.flink.connector.kafka.source.KafkaSource;
 import org.apache.flink.connector.kafka.source.enumerator.initializer.OffsetsInitializer;
+import org.apache.flink.streaming.api.datastream.AsyncDataStream;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.connector.jdbc.JdbcSink;
@@ -37,10 +40,11 @@ import java.time.Duration;
 
 import java.sql.Date;
 import java.time.ZoneId;
+import java.util.concurrent.TimeUnit;
 
 public class DataStreamJob {
 	private final ConfigReader configs;
-
+	private static final Logger logger = LoggerFactory.getLogger(DataStreamJob.class);
 	public DataStreamJob()
 	{
 		this.configs=new ConfigReader();
@@ -75,7 +79,6 @@ public class DataStreamJob {
 				.build();
 		return Tuple2.of(execOptions,connOptions);
 	}
-	@SuppressWarnings("unchecked")
 	public <T> KafkaSource<T> getKafkaSource(String topic, Class<T> cls)
 	{
 		return KafkaSource.<T>builder()
@@ -83,7 +86,7 @@ public class DataStreamJob {
 				.setTopics(topic)
 				.setGroupId("FlinkCommerce")
 				.setStartingOffsets(OffsetsInitializer.earliest())
-				.setValueOnlyDeserializer(new JSONValueDeserializationSchema<T>(cls))
+				.setValueOnlyDeserializer(new JSONValueDeserializationSchema<>(cls))
 				.build();
 	}
 
@@ -121,8 +124,14 @@ public class DataStreamJob {
 				connOptions
 		)).name("currency exchange updates");
 
-
-		transactionStream.addSink(JdbcSink.sink(
+		DataStream<Transactions> enrichedtransactionStream = AsyncDataStream.unorderedWait(
+				transactionStream,
+				new currencyConverter(datastream.configs.get("db.url"), datastream.configs.get("db.username"), datastream.configs.get("db.password")),
+				30, // Timeout in milliseconds
+				TimeUnit.SECONDS,
+				20 // Maximum concurrency
+		);
+		enrichedtransactionStream.addSink(JdbcSink.sink(
 				"INSERT INTO transactions(transaction_id, product_id, product_name, product_category, product_price, " +
 						"product_quantity, product_brand, total_amount, currency, customer_id, transaction_date, payment_method) " +
 						"VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) " +
@@ -157,7 +166,7 @@ public class DataStreamJob {
 				connOptions
 		)).name("Insert into transactions table sink");
 
-		transactionStream.map(
+		enrichedtransactionStream.map(
 						transaction -> {
 							Date transactionDate = new Date(System.currentTimeMillis());
 							String category = transaction.getProductCategory();
@@ -185,7 +194,7 @@ public class DataStreamJob {
 				)).name("Insert into sales per category table");
 
 
-		transactionStream.map(
+		enrichedtransactionStream.map(
 				(Transactions transaction)-> {
 					Date transactionDate = Date.valueOf(transaction.getTransactionDate().toInstant().atZone(ZoneId.systemDefault()).toLocalDate());
 					Double total_amount = transaction.getTotalAmount();
