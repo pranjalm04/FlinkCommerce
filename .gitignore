@@ -6,6 +6,7 @@ target/
 .venv
 .logs
 .__pycache__
+.TransactionsProducer/__pycache__
 ### IntelliJ IDEA ###
 .idea/modules.xml
 .idea/jarRepositories.xml
